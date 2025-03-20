@@ -1,0 +1,59 @@
+# Python
+*.pyc
+*.pyo
+__pycache__/
+*.pyd
+
+# Virtual environment
+venv/
+env/
+.venv/
+ENV/
+
+# VS Code settings (if using)
+.vscode/
+
+# PyCharm settings (if using)
+.idea/
+
+# Environment variables
+.env
+
+# Database files
+*.sqlite
+db/
+
+# Logs
+*.log
+
+# MyPy
+.mypy_cache/
+
+# pytest
+.cache/
+
+# Docker
+*.dockerfile
+Dockerfile*
+docker-compose.yml
+
+# Distribution / packaging
+.Python
+build/
+dist/
+eggs/
+parts/
+sdist/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Test results
+*.cover
+*.coverage
+nosetests.xml
+coverage.xml
+*.hypothesis/
+
+# JWT Secret (Do not include this in git, use .env)
+*.pem
