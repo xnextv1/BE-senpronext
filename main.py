@@ -1,36 +1,31 @@
-from fastapi import FastAPI, HTTPException, Depends
-import jwt
-import datetime
-from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
+from fastapi import FastAPI
+from routes.auth import router as auth_router
+from fastapi.middleware.cors import CORSMiddleware
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
-# Secret key for encoding and decoding JWT
-SECRET_KEY = "4qQqEaKn6kXay4XDpArk9EGxOU6LXdq4vpyBsYwq+Xw="
+# Allowed origins (change this to your frontend's port)
+origins = [
+    os.getenv("FRONTEND_URL"),  # React/Next.js frontend
+]
 
-# Function to create a JWT token
-def create_jwt_token(data: dict, expires_delta: int = 60):
-    expiration = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_delta)
-    data["exp"] = expiration
-    token = jwt.encode(data, SECRET_KEY, algorithm="HS256")
-    return token
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Allow specific frontend ports
+    allow_credentials=True,  # Allow cookies (important for JWT auth)
+    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Allowed HTTP methods
+    allow_headers=["Content-Type", "Authorization"],  # Allowed headers
+)
 
-# Function to verify a JWT token
-def verify_jwt_token(token: str):
-    try:
-        decoded_data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        return decoded_data
-    except ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired")
-    except InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
 
-@app.get("/token")
-def generate_token():
-    token = create_jwt_token({"sub": "Daffa"})
-    return {"token": token}
+app.include_router(auth_router, prefix="/auth")
 
-@app.get("/protected")
-def protected_route(token: str):
-    user_data = verify_jwt_token(token)
-    return {"message": f"Hello, {user_data['sub']}! You have access to this route."}
+
+
+@app.get("/")
+def home():
+    return {"message": "FastAPI + MongoDB Authentication"}
