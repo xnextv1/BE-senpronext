@@ -1,7 +1,8 @@
+from urllib import request
 
 from pydantic import BaseModel
 from routes.users import get_user_by_email, create_user
-from core.security import verify_password, create_jwt_token, decode_jwt_token
+from core.security import verify_password, create_jwt_token, hash_password, decode_jwt_token
 from core.db import get_db
 from fastapi import APIRouter, HTTPException, Response, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,8 +30,9 @@ async def register(request: RegisterRequest, response :  Response,db: AsyncSessi
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
 
-    await create_user(username= request.username, email=request.email, password=request.password, usertype = request.userType, db=db)
+    await create_user(email=request.email, password=request.password, usertype = request.userType, db=db, db=db)
     user = await get_user_by_email(request.email, db)
+
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -84,9 +86,6 @@ async def login(request: LoginRequest, response: Response, db: AsyncSession = De
     )
     return {"message": "Login successful"}
 
-@router.post("/refresh")
-async def refresh(request: Request, response: Response):
-    token
 
 
 @router.get("/me")
