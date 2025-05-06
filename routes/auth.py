@@ -30,7 +30,7 @@ async def register(request: RegisterRequest, response :  Response,db: AsyncSessi
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
 
-    await create_user(email=request.email, password=request.password, usertype = request.userType, db=db, db=db)
+    await create_user(email=request.email, password=request.password, usertype = request.userType, db=db)
     user = await get_user_by_email(request.email, db)
 
 
