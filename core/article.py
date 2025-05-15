@@ -1,3 +1,5 @@
+from http.client import responses
+
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -16,6 +18,7 @@ async def rate_article(
 
     if not article:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Article not found")
+
 
     article_rating = ArticleRating(article_id=article_id, rating=rating)
     db.add(article_rating)
@@ -41,3 +44,17 @@ async def update_article_average(article_id: int, db: AsyncSession = Depends(get
     article.article_rating = avg_rating
     article.article_rating_count += 1
     await db.commit()
+
+async def search_article_by_title(title: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Article).where(Article.title.ilike(f"%{title}%"))
+    )
+    articles = result.scalars().all()
+    responses = []
+    for article in articles:
+     responses.append({
+        "title": article.title,
+        "id": article.article_id
+     })
+
+    return responses
