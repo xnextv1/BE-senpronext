@@ -50,8 +50,8 @@ async def register(request: RegisterRequest, response :  Response,db: AsyncSessi
         httponly=False,
         max_age=3600,  # 1 hour
         path="/",
-        samesite="lax",
-        secure=False
+        samesite="none",
+        secure=True
     )
 
     return {"message": "User registered successfully", "token": token}
@@ -75,8 +75,8 @@ async def login(request: LoginRequest, response: Response, db: AsyncSession = De
         httponly=False,
         max_age=3600,         # 1 hour
         path="/",
-        samesite="lax",       # allow cookie on top-level navigation and fetch
-        secure=False          # MUST be False if not using HTTPS
+        samesite="none",       # allow cookie on top-level navigation and fetch
+        secure=True          # MUST be False if not using HTTPS
     )
 
     response.set_cookie(
@@ -85,8 +85,8 @@ async def login(request: LoginRequest, response: Response, db: AsyncSession = De
         httponly=True,
         max_age=3600,
         path="/",
-        samesite="lax",
-        secure=False
+        samesite="none",
+        secure=True
 
     )
     return {"message": "Login successful"}
