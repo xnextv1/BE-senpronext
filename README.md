@@ -26,19 +26,31 @@
 
 ## Instalasi
 git clone https://github.com/xnextv1/BE-senpronex
+
 pip install requirements.txt
+
 source venv/bin/activate
+
 uvicorn main:app --port 8000
 
 ## 📦 Direktori
 
 
 DATABASE_URL='rahasoa
+
 MONGO_DATABASE=Senpro
+
 SECRET_KEY=Rareu1Oea+GSZgqDu7NMwZ0m9u0pjtI+jeavvt3astU=
+
 FRONTEND_URL=frontend
+
 CLOUDINARY_CLOUD_NAME=djfue1ffl
+
 CLOUDINARY_API_KEY=958472578797357
+
 CLOUDINARY_API_SECRET=AtRG78rPYquLXgs2PzrhA0OL6-c
+
 OPENAI_API_URL=https://api.deepseek.com
+
 OPENAI_API_KEY="tidak dishare"
+
