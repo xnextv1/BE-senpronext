@@ -15,4 +15,4 @@ jobs:
 
       - name: Run git pull on VPS
         run: |
-          sshpass -p "${{ secrets.VPS_PASSWORD }}" ssh -o StrictHostKeyChecking=no senpro@103.226.138.66 "cd backend/BE-senpronext && git pull"
+          sshpass -p "Daffa2!3" ssh -o StrictHostKeyChecking=no senpro@103.226.138.66 "cd backend/BE-senpronext && git pull"
