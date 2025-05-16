@@ -1,11 +1,6 @@
 from urllib import request
 
 from pydantic import BaseModel
-from sqlalchemy import select, func
-
-from core.ai import get_emotional_recap
-from models.chat import ChatMessage
-from models.users import User
 from routes.users import get_user_by_email, create_user
 from core.security import verify_password, create_jwt_token, hash_password, decode_jwt_token
 from core.db import get_db
@@ -35,7 +30,7 @@ async def register(request: RegisterRequest, response :  Response,db: AsyncSessi
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
 
-    await create_user(username=request.username,email=request.email, password=request.password, usertype = request.userType, db=db)
+    await create_user(email=request.email, password=request.password, usertype = request.userType, db=db)
     user = await get_user_by_email(request.email, db)
 
 
@@ -106,40 +101,3 @@ async def get_me(request: Request, db: AsyncSession = Depends(get_db)):
         "email": user.email,
         "user_id": user.user_id,
         }
-
-@router.get("/me/dashboard")
-async def get_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
-    token = request.cookies.get("token")
-    if not token:
-        raise HTTPException(status_code=401, detail="Login required")
-
-    decoded_token = decode_jwt_token(token)
-    user = await get_user_by_email(decoded_token["user"]["email"], db)
-
-    stmt = (
-        select(ChatMessage.emotion, func.count().label("count"))
-        .where(ChatMessage.user_id == user.user_id)
-        .group_by(ChatMessage.emotion)
-    )
-
-    result = await db.execute(stmt)
-    emotion_counts = result.all()
-
-    return {
-        "emotion_counts": [
-            {"emotion": emotion, "count": count}
-            for emotion, count in emotion_counts
-        ]
-    }
-
-@router.get("/me/recap")
-async def get_recap(request: Request, db: AsyncSession = Depends(get_db)):
-    token = request.cookies.get("token")
-    if not token:
-        raise HTTPException(status_code=401, detail="Login required")
-
-    decoded_token = decode_jwt_token(token)
-    user = await get_user_by_email(decoded_token["user"]["email"], db)
-    response = await get_emotional_recap(user_id=user.user_id, db=db)
-
-    return {"recap": response}

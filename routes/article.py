@@ -1,5 +1,4 @@
 from datetime import datetime
-from http.client import responses
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, Query, UploadFile, File, HTTPException, Form
@@ -8,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
 
-from core.article import rate_article, search_article_by_title
+from core.article import rate_article
 from models.article import Article
 from core.db import get_db
 from typing import List
@@ -27,11 +26,24 @@ cloudinary.config(
     secure = True
 )
 
+class ArticleOut(BaseModel):
+    id: int
+    title: str
+    content: str
+
+    class Config:
+        orm_mode = True
+
+class PaginatedArticles(BaseModel):
+    total: int
+    total_pages: int
+    offset: int
+    limit: int
+    data: List[ArticleOut]
 
 
 
-
-@router.get("/articles")
+@router.get("/articles", response_model=PaginatedArticles)
 async def get_articles(
     db: AsyncSession = Depends(get_db),
     pageSize: int = Query(10, ge=5, le=100),
@@ -43,21 +55,20 @@ async def get_articles(
 
     # Get paginated data
     result = await db.execute(
-        select(Article).offset((page - 1) * pageSize).limit(pageSize)
+        select(Article).offset(page * pageSize).limit(pageSize)
     )
     articles = result.scalars().all()
-    print(articles)
-    response_article = []
-    for article in articles:
-        response_article.append(article)
+
     # Calculate total pages
     total_pages = (total + pageSize - 1) // pageSize  # ceil division
 
-    return {
-        "total": total,
-        "total_pages": total_pages,
-        "data": response_article
-    }
+    return PaginatedArticles(
+        total=total,
+        total_pages=total_pages,
+        page=page,
+        pageSize=pageSize,
+        data=articles
+    )
 
 @router.get("/articles/{id}")
 async def get_article(
@@ -112,11 +123,3 @@ async def article_rating(
 
 
     return {"message": "Article successfully rated"}
-
-@router.get("/articles/search/{searchterm}")
-async def search_articles(
-        searchterm: str,
-        db: AsyncSession = Depends(get_db),
-):
-    article = await search_article_by_title(searchterm, db)
-    return {"data": article}

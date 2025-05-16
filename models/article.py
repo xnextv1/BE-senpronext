@@ -14,9 +14,6 @@ class Article(Base):
     article_rating = Column(Float)
     article_rating_count = Column(Integer)
 
-    class Config:
-        arbitrary_types_allowed = True
-
 class ArticleRating(Base):
     __tablename__ = 'article_rating'
     rating_id = Column(Integer, primary_key=True)
