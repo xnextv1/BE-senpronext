@@ -114,7 +114,7 @@ async def websocket_chat(websocket: WebSocket, chat_session_id: str):
 
 
                 # Step 8: Generate AI response (this is a placeholder)
-                ai_response = predict_response(data)
+                ai_response = await predict_response(data, chat_id= chat_session_id, db=db)
                 print(ai_response)
                 ai_msg = ChatMessage(
                     chat_session_id=chat_session.chat_session_id,
@@ -129,7 +129,7 @@ async def websocket_chat(websocket: WebSocket, chat_session_id: str):
                 await manager.broadcast(chat_session_id, ai_response)
 
         except WebSocketDisconnect:
-            # Handle WebSocket disconnection
+            # Handle WebSocket disconnection===
             manager.disconnect(chat_session_id, websocket)
 
     except Exception as e:
@@ -149,6 +149,7 @@ async def create_chat_session(payload: ChatCreate, db: AsyncSession = Depends(ge
     await db.commit()
     await db.refresh(new_chat_session)  # optional: get back the inserted values
     return {"message": "Chat created", "chat_session_id": str(new_chat_session.chat_session_id)}
+
 
 
 @router.get("/{chat_session_id}", response_model=List[ChatMessageSchema])

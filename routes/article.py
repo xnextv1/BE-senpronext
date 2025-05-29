@@ -27,23 +27,29 @@ cloudinary.config(
 )
 
 class ArticleOut(BaseModel):
-    id: int
+    article_id: int
     title: str
-    content: str
+    article_content: str
+    article_rating: int
+    article_rating_count: int
+    image: str | None = None
+    article_date: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True  # Enables ORM mode in Pydantic v2
+    }
+
 
 class PaginatedArticles(BaseModel):
     total: int
     total_pages: int
-    offset: int
-    limit: int
+    page: int
+    pageSize: int
     data: List[ArticleOut]
 
 
 
-@router.get("/articles", response_model=PaginatedArticles)
+@router.get("/articles")
 async def get_articles(
     db: AsyncSession = Depends(get_db),
     pageSize: int = Query(10, ge=5, le=100),
@@ -55,20 +61,22 @@ async def get_articles(
 
     # Get paginated data
     result = await db.execute(
-        select(Article).offset(page * pageSize).limit(pageSize)
+        select(Article).offset((page-1) * pageSize).limit(pageSize)
     )
     articles = result.scalars().all()
-
+    data = []
+    for article in articles:
+        data.append(article)
     # Calculate total pages
     total_pages = (total + pageSize - 1) // pageSize  # ceil division
 
-    return PaginatedArticles(
-        total=total,
-        total_pages=total_pages,
-        page=page,
-        pageSize=pageSize,
-        data=articles
-    )
+    return {
+        "total": total,
+        "total_pages": total_pages,
+        "page": page,
+        "pageSize": pageSize,
+        "data": data
+    }
 
 @router.get("/articles/{id}")
 async def get_article(
@@ -123,3 +131,21 @@ async def article_rating(
 
 
     return {"message": "Article successfully rated"}
+
+@router.get("/articles/search/{searchterm}")
+async def get_articles_by_searchterm(
+    searchterm: str,
+    db: AsyncSession = Depends(get_db),
+):
+    # Filter articles where title or content contains the search term
+    search_filter = Article.title.ilike(f"%{searchterm}%")  # Add other fields if needed
+
+    result = await db.execute(
+        select(Article).where(search_filter)
+    )
+    articles = result.scalars().all()
+
+    return {
+        "total": len(articles),
+        "data": articles
+    }
