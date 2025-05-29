@@ -1,17 +1,20 @@
+from typing import Optional
 from urllib import request
 
+from dotenv import load_dotenv
 from pydantic import BaseModel
 from sqlalchemy import select, func
 
 from core.ai import get_emotional_recap
 from models.chat import ChatMessage
 from models.users import User
-from routes.users import get_user_by_email, create_user
+from routes.users import get_user_by_email, create_user, update_user_description_and_image, update_user_description
 from core.security import verify_password, create_jwt_token, hash_password, decode_jwt_token
 from core.db import get_db
-from fastapi import APIRouter, HTTPException, Response, Depends, Request
+from fastapi import APIRouter, HTTPException, Response, Depends, Request, Form, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
-
+import cloudinary.uploader
+import os
 
 router = APIRouter()
 
@@ -26,6 +29,15 @@ class RegisterRequest(BaseModel):
     email: str
     password: str
     userType: str
+
+load_dotenv()
+
+cloudinary.config(
+    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key = os.getenv("CLOUDINARY_API_KEY"),
+    api_secret = os.getenv("CLOUDINARY_API_SECRET"),
+    secure = True
+)
 
 
 # Register a new user
@@ -75,8 +87,8 @@ async def login(request: LoginRequest, response: Response, db: AsyncSession = De
         httponly=False,
         max_age=3600,         # 1 hour
         path="/",
-        samesite="none",       # allow cookie on top-level navigation and fetch
-        secure=True          # MUST be False if not using HTTPS
+        samesite="lax",       # allow cookie on top-level navigation and fetch
+        secure=False          # MUST be False if not using HTTPS
     )
 
     response.set_cookie(
@@ -85,8 +97,8 @@ async def login(request: LoginRequest, response: Response, db: AsyncSession = De
         httponly=True,
         max_age=3600,
         path="/",
-        samesite="none",
-        secure=True
+        samesite="lax",
+        secure=False
 
     )
     return {"message": "Login successful"}
@@ -105,6 +117,8 @@ async def get_me(request: Request, db: AsyncSession = Depends(get_db)):
         "user_type": user.user_type,
         "email": user.email,
         "user_id": user.user_id,
+        "description": user.description,
+        "image": user.image,
         }
 
 @router.get("/me/dashboard")
@@ -143,3 +157,26 @@ async def get_recap(request: Request, db: AsyncSession = Depends(get_db)):
     response = await get_emotional_recap(user_id=user.user_id, db=db)
 
     return {"recap": response}
+
+@router.patch("/profile/update")
+async def update_profile(
+    description: str = Form(...),
+    user_id: int = Form(...),
+    img: Optional[UploadFile] = File(None),
+    db: AsyncSession = Depends(get_db),
+):
+    print(f"img: {img}, type: {type(img)}")
+    if img:
+        try:
+            upload_result = cloudinary.uploader.upload(img.file)
+            print("Cloudinary result:", upload_result)
+            image_url = upload_result.get("secure_url")
+            await update_user_description_and_image(db=db, user_id=user_id, description=description,
+                                                        image=image_url)
+        except Exception as e:
+            return {"error": "Image upload failed", "details": str(e)}
+
+    else:
+        await update_user_description(db=db, user_id=user_id, description=description)
+
+    return {"message": "Profile updated successfully"}

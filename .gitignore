@@ -9,7 +9,7 @@ venv/
 env/
 .venv/
 ENV/
-/emotion-classfication/*
+emotion-classfication/
 
 # VS Code settings (if using)
 .vscode/

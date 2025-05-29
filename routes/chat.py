@@ -129,7 +129,7 @@ async def websocket_chat(websocket: WebSocket, chat_session_id: str):
                 await manager.broadcast(chat_session_id, ai_response)
 
         except WebSocketDisconnect:
-            # Handle WebSocket disconnection
+            # Handle WebSocket disconnection===
             manager.disconnect(chat_session_id, websocket)
 
     except Exception as e:

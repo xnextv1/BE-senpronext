@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 from routes.chat import router as chat_router
 from routes.article import router as article_router
+from routes.appointment import router as appointment_router
 
 load_dotenv()
 
@@ -20,7 +21,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allow specific frontend ports
     allow_credentials=True,  # Allow cookies (important for JWT auth)
-    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Allowed HTTP methods
+    allow_methods=["GET", "POST", "PATCH","PUT", "DELETE"],  # Allowed HTTP methods
     allow_headers=["Content-Type", "Authorization", ],  # Allowed headers
 )
 
@@ -32,7 +33,6 @@ async def log_requests(request: Request, call_next):
     return response
 
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
-
 app.include_router(article_router, prefix="/api/v1", tags=["Article"])
 app.include_router(chat_router, prefix="/chat", tags=["Chat"])
-
+app.include_router(appointment_router, prefix="/appointment", tags=["Appointment"])

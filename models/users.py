@@ -10,3 +10,5 @@ class User(Base):
     user_type = Column(String)
     created_at = Column(TIMESTAMP)
     username = Column(String)
+    description = Column(String)
+    image = Column(String)

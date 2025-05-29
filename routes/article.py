@@ -1,5 +1,4 @@
 from datetime import datetime
-from http.client import responses
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, Query, UploadFile, File, HTTPException, Form
@@ -8,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
 
-from core.article import rate_article, search_article_by_title
+from core.article import rate_article
 from models.article import Article
 from core.db import get_db
 from typing import List
@@ -27,7 +26,26 @@ cloudinary.config(
     secure = True
 )
 
+class ArticleOut(BaseModel):
+    article_id: int
+    title: str
+    article_content: str
+    article_rating: int
+    article_rating_count: int
+    image: str | None = None
+    article_date: datetime
 
+    model_config = {
+        "from_attributes": True  # Enables ORM mode in Pydantic v2
+    }
+
+
+class PaginatedArticles(BaseModel):
+    total: int
+    total_pages: int
+    page: int
+    pageSize: int
+    data: List[ArticleOut]
 
 
 
@@ -43,20 +61,21 @@ async def get_articles(
 
     # Get paginated data
     result = await db.execute(
-        select(Article).offset((page - 1) * pageSize).limit(pageSize)
+        select(Article).offset((page-1) * pageSize).limit(pageSize)
     )
     articles = result.scalars().all()
-    print(articles)
-    response_article = []
+    data = []
     for article in articles:
-        response_article.append(article)
+        data.append(article)
     # Calculate total pages
     total_pages = (total + pageSize - 1) // pageSize  # ceil division
 
     return {
         "total": total,
         "total_pages": total_pages,
-        "data": response_article
+        "page": page,
+        "pageSize": pageSize,
+        "data": data
     }
 
 @router.get("/articles/{id}")
@@ -114,9 +133,19 @@ async def article_rating(
     return {"message": "Article successfully rated"}
 
 @router.get("/articles/search/{searchterm}")
-async def search_articles(
-        searchterm: str,
-        db: AsyncSession = Depends(get_db),
+async def get_articles_by_searchterm(
+    searchterm: str,
+    db: AsyncSession = Depends(get_db),
 ):
-    article = await search_article_by_title(searchterm, db)
-    return {"data": article}
+    # Filter articles where title or content contains the search term
+    search_filter = Article.title.ilike(f"%{searchterm}%")  # Add other fields if needed
+
+    result = await db.execute(
+        select(Article).where(search_filter)
+    )
+    articles = result.scalars().all()
+
+    return {
+        "total": len(articles),
+        "data": articles
+    }
